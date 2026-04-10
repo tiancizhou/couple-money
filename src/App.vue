@@ -60,7 +60,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import Dashboard from './components/Dashboard.vue'
 import AiInput from './components/AiInput.vue'
 import HistoryList from './components/HistoryList.vue'
@@ -68,7 +68,8 @@ import DetailPage from './components/DetailPage.vue'
 import ChartPage from './components/ChartPage.vue'
 
 const currentMonth = ref(new Date().toISOString().slice(0, 7))
-const identity = ref('男朋友')
+const identity = ref(localStorage.getItem('identity') || '男朋友')
+watch(identity, (val) => localStorage.setItem('identity', val))
 const historyRef = ref(null)
 const dashboardRef = ref(null)
 
