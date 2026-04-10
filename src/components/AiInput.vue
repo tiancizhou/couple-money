@@ -24,7 +24,7 @@
       </van-button>
     </div>
 
-    <!-- 处理中队列 -->
+    <!-- 处理状态 -->
     <div v-if="pendingItems.length > 0" class="mt-3 space-y-2">
       <div
         v-for="item in pendingItems"
@@ -36,54 +36,16 @@
         <span v-else-if="item.status === 'done'" class="text-green-500 text-sm">✓</span>
         <span v-else class="text-red-500 text-sm">✗</span>
         <span class="text-xs text-gray-500 flex-1 truncate">{{ item.text }}</span>
-        <span v-if="item.status === 'processing'" class="text-xs text-blue-400">解析中...</span>
-        <span v-else-if="item.status === 'done'" class="text-xs text-green-400">已确认</span>
+        <span v-if="item.status === 'processing'" class="text-xs text-blue-400">记账中...</span>
+        <span v-else-if="item.status === 'done'" class="text-xs text-green-400">¥{{ item.amount }}</span>
         <span v-else class="text-xs text-red-400">失败</span>
       </div>
     </div>
-
-    <!-- 确认弹窗 -->
-    <van-dialog
-      v-model:show="showConfirm"
-      title="确认记账信息"
-      show-cancel-button
-      @confirm="saveRecord"
-      @cancel="onConfirmCancel"
-    >
-      <div v-if="currentParsed" class="px-6 py-4 space-y-3 text-sm">
-        <div class="flex justify-between">
-          <span class="text-gray-500">金额</span>
-          <span class="font-bold text-lg" :class="currentParsed.type === '收入' ? 'text-green-600' : 'text-primary'">
-            {{ currentParsed.type === '收入' ? '+' : '-' }}¥{{ currentParsed.amount }}
-          </span>
-        </div>
-        <div class="flex justify-between">
-          <span class="text-gray-500">分类</span>
-          <span class="text-gray-800">{{ currentParsed.category }}</span>
-        </div>
-        <div class="flex justify-between">
-          <span class="text-gray-500">角色</span>
-          <span :class="roleClass">{{ currentParsed.role }}</span>
-        </div>
-        <div class="flex justify-between">
-          <span class="text-gray-500">类型</span>
-          <span :class="currentParsed.type === '收入' ? 'text-green-600' : 'text-red-400'">{{ currentParsed.type }}</span>
-        </div>
-        <div class="flex justify-between">
-          <span class="text-gray-500">备注</span>
-          <span class="text-gray-800">{{ currentParsed.note }}</span>
-        </div>
-        <div class="flex justify-between">
-          <span class="text-gray-500">日期</span>
-          <span class="text-gray-800">{{ todayStr }}</span>
-        </div>
-      </div>
-    </van-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { showToast } from 'vant'
 
 const emit = defineEmits(['saved'])
@@ -94,97 +56,50 @@ const props = defineProps({
 
 const inputText = ref('')
 const todayStr = new Date().toISOString().slice(0, 10)
-
-// 异步队列
 const pendingItems = ref([])
-const confirmQueue = ref([]) // 已解析完成，等待确认的列表
-const showConfirm = ref(false)
-const currentParsed = ref(null)
 let idCounter = 0
 
-const roleClass = computed(() => {
-  if (!currentParsed.value) return ''
-  const map = { '男朋友': 'text-blue-600', '女朋友': 'text-pink-600', '共同': 'text-purple-600' }
-  return map[currentParsed.value.role] || 'text-gray-800'
-})
-
-// 提交输入（非阻塞）
 function submitInput() {
   const text = inputText.value.trim()
   if (!text) return
 
-  // 立即清空输入框，用户可以继续输入
   inputText.value = ''
-
-  const item = { id: ++idCounter, text, status: 'processing' }
+  const item = { id: ++idCounter, text, status: 'processing', amount: '' }
   pendingItems.value.push(item)
-
-  // 异步调用 AI
   processItem(item, text)
 }
 
 async function processItem(item, text) {
   try {
-    const res = await fetch('/api/parse', {
+    // 1. AI 解析
+    const parseRes = await fetch('/api/parse', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text, identity: props.identity })
     })
-    if (!res.ok) throw new Error()
-    const parsed = await res.json()
+    if (!parseRes.ok) throw new Error()
+    const parsed = await parseRes.json()
 
-    // 加入确认队列
-    confirmQueue.value.push({ item, parsed })
-    // 尝试弹出下一个确认
-    showNextConfirm()
-  } catch {
-    item.status = 'failed'
-    showToast('解析失败: ' + text.slice(0, 10) + '...')
-    // 3 秒后移除失败项
-    setTimeout(() => {
-      pendingItems.value = pendingItems.value.filter(p => p.id !== item.id)
-    }, 3000)
-  }
-}
-
-function showNextConfirm() {
-  if (showConfirm.value || confirmQueue.value.length === 0) return
-
-  const next = confirmQueue.value.shift()
-  currentParsed.value = next.parsed
-  next.item.status = 'done'
-  showConfirm.value = true
-}
-
-async function saveRecord() {
-  if (!currentParsed.value) return
-  try {
-    await fetch('/api/records', {
+    // 2. 直接保存，无需确认
+    const saveRes = await fetch('/api/records', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...currentParsed.value,
-        date: todayStr
-      })
+      body: JSON.stringify({ ...parsed, date: todayStr })
     })
-    showToast('记账成功')
+    if (!saveRes.ok) throw new Error()
+
+    item.status = 'done'
+    item.amount = parsed.amount.toFixed(0)
+    showToast(`记账成功 ¥${parsed.amount}`)
     emit('saved')
   } catch {
-    showToast('保存失败')
+    item.status = 'failed'
+    showToast('记账失败: ' + text.slice(0, 10) + '...')
   }
-  currentParsed.value = null
 
-  // 清除已完成项（延迟）
+  // 3 秒后清除已完成/失败的项
   setTimeout(() => {
     pendingItems.value = pendingItems.value.filter(p => p.status === 'processing')
-  }, 1500)
-
-  // 弹出下一个确认
-  setTimeout(showNextConfirm, 300)
-}
-
-function onConfirmCancel() {
-  currentParsed.value = null
-  setTimeout(showNextConfirm, 300)
+  }, 3000)
 }
 </script>
