@@ -72,6 +72,7 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import { showToast } from 'vant'
+import { formatLocalMonth } from '../utils/date.js'
 
 const props = defineProps({
   month: String
@@ -104,7 +105,7 @@ const totalIncome = computed(() => {
 })
 
 const monthColumns = computed(() => {
-  const now = new Date().toISOString().slice(0, 7)
+  const now = formatLocalMonth(new Date())
   const list = [...months.value]
   if (!list.includes(now)) list.unshift(now)
   return list.map(m => {

@@ -4,6 +4,7 @@ import fastifyCors from '@fastify/cors'
 import { fileURLToPath } from 'url'
 import path from 'path'
 import { addRecord, getRecordsByMonth, getDashboard, getMonths, getCategoryDaily, getCategoryRoleBreakdown, getDailyTrend } from './database.js'
+import { formatLocalMonth } from './src/utils/date.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -87,12 +88,12 @@ export async function buildServer() {
   })
 
   app.get('/api/records', async (req) => {
-    const month = req.query.month || new Date().toISOString().slice(0, 7)
+    const month = req.query.month || formatLocalMonth(new Date())
     return getRecordsByMonth(month)
   })
 
   app.get('/api/dashboard', async (req) => {
-    const month = req.query.month || new Date().toISOString().slice(0, 7)
+    const month = req.query.month || formatLocalMonth(new Date())
     return getDashboard(month)
   })
 
@@ -102,14 +103,14 @@ export async function buildServer() {
 
   // 图表数据：每日总趋势
   app.get('/api/charts/daily', async (req) => {
-    const month = req.query.month || new Date().toISOString().slice(0, 7)
+    const month = req.query.month || formatLocalMonth(new Date())
     const type = req.query.type || '支出'
     return getDailyTrend(month, type)
   })
 
   // 图表数据：某分类的每日趋势
   app.get('/api/charts/category-daily', async (req) => {
-    const month = req.query.month || new Date().toISOString().slice(0, 7)
+    const month = req.query.month || formatLocalMonth(new Date())
     const { category, type } = req.query
     if (!category) return { error: '缺少 category' }
     return getCategoryDaily(month, category, type || '支出')
@@ -117,7 +118,7 @@ export async function buildServer() {
 
   // 图表数据：某分类的角色分布
   app.get('/api/charts/category-roles', async (req) => {
-    const month = req.query.month || new Date().toISOString().slice(0, 7)
+    const month = req.query.month || formatLocalMonth(new Date())
     const { category, type } = req.query
     if (!category) return { error: '缺少 category' }
     return getCategoryRoleBreakdown(month, category, type || '支出')

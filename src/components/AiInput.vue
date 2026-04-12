@@ -47,6 +47,7 @@
 <script setup>
 import { ref } from 'vue'
 import { showToast } from 'vant'
+import { formatLocalDate } from '../utils/date.js'
 
 const emit = defineEmits(['saved'])
 
@@ -55,7 +56,6 @@ const props = defineProps({
 })
 
 const inputText = ref('')
-const todayStr = new Date().toISOString().slice(0, 10)
 const pendingItems = ref([])
 let idCounter = 0
 
@@ -84,7 +84,7 @@ async function processItem(item, text) {
     const saveRes = await fetch('/api/records', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...parsed, date: todayStr })
+      body: JSON.stringify({ ...parsed, date: formatLocalDate(new Date()) })
     })
     if (!saveRes.ok) throw new Error()
 

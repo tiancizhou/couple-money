@@ -21,15 +21,15 @@
         <div class="flex gap-6 mt-3">
           <div>
             <div class="text-xs opacity-70">👦 男朋友</div>
-            <div class="text-base font-semibold">¥{{ data.expense['男朋友'].toFixed(0) }}</div>
+            <div class="text-base font-semibold">¥{{ roleTotals['男朋友'].toFixed(0) }}</div>
           </div>
           <div>
             <div class="text-xs opacity-70">👧 女朋友</div>
-            <div class="text-base font-semibold">¥{{ data.expense['女朋友'].toFixed(0) }}</div>
+            <div class="text-base font-semibold">¥{{ roleTotals['女朋友'].toFixed(0) }}</div>
           </div>
           <div>
             <div class="text-xs opacity-70">💑 共同</div>
-            <div class="text-base font-semibold">¥{{ data.expense['共同'].toFixed(0) }}</div>
+            <div class="text-base font-semibold">¥{{ roleTotals['共同'].toFixed(0) }}</div>
           </div>
         </div>
       </div>
@@ -79,6 +79,7 @@
 <script setup>
 import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import { Chart, ArcElement, DoughnutController, Tooltip, Legend } from 'chart.js'
+import { getRoleTotalsByType } from '../utils/detailSummary.js'
 
 Chart.register(ArcElement, DoughnutController, Tooltip, Legend)
 
@@ -98,6 +99,8 @@ const data = ref({
 
 const roleChartRef = ref(null)
 let roleChart = null
+
+const roleTotals = computed(() => getRoleTotalsByType(data.value, props.type))
 
 const details = computed(() => {
   return props.type === '支出' ? data.value.expenseDetails : data.value.incomeDetails
@@ -128,8 +131,7 @@ function renderRoleChart() {
   if (roleChart) roleChart.destroy()
   if (!roleChartRef.value || total.value === 0) return
 
-  const d = props.type === '支出' ? data.value.expense : data.value.income
-  const isExpense = props.type === '支出'
+  const d = roleTotals.value
 
   roleChart = new Chart(roleChartRef.value, {
     type: 'doughnut',
