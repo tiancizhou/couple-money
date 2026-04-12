@@ -52,10 +52,11 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick, watch } from 'vue'
-import { Chart, ArcElement, DoughnutController, CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip, Legend } from 'chart.js'
+import { ref, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
+import { Chart } from 'chart.js'
+import { registerChartPageCharts } from '../utils/chartPageCharts.js'
 
-Chart.register(ArcElement, DoughnutController, CategoryScale, LinearScale, PointElement, LineElement, Filler, Tooltip, Legend)
+registerChartPageCharts()
 
 const props = defineProps({
   category: String,
@@ -92,16 +93,24 @@ async function fetchAndRender() {
   const type = props.type
   const params = `month=${month}&category=${encodeURIComponent(category)}&type=${encodeURIComponent(type)}`
 
-  const [roleRes, dailyRes] = await Promise.all([
-    fetch(`/api/charts/category-roles?${params}`).then(r => r.json()),
-    fetch(`/api/charts/category-daily?${params}`).then(r => r.json())
-  ])
+  try {
+    const [roleRes, dailyRes] = await Promise.all([
+      fetch(`/api/charts/category-roles?${params}`).then(r => r.json()),
+      fetch(`/api/charts/category-daily?${params}`).then(r => r.json())
+    ])
 
-  dailyData.value = dailyRes
+    dailyData.value = dailyRes
 
-  await nextTick()
-  renderPie(roleRes)
-  renderLine(dailyRes)
+    await nextTick()
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        renderPie(roleRes)
+        renderLine(dailyRes)
+      })
+    })
+  } catch (e) {
+    console.error('ChartPage fetchAndRender error:', e)
+  }
 }
 
 function renderPie(roleData) {
@@ -202,4 +211,8 @@ function renderLine(dailyRes) {
 
 watch(() => [props.category, props.type, props.month], fetchAndRender)
 onMounted(fetchAndRender)
+onBeforeUnmount(() => {
+  if (pieChart) pieChart.destroy()
+  if (lineChart) lineChart.destroy()
+})
 </script>
