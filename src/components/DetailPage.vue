@@ -52,7 +52,7 @@
             class="flex items-center gap-3 px-2 py-3 active:bg-gray-50 rounded-xl transition-colors cursor-pointer border-b border-gray-50 last:border-0"
             @click="$emit('openChart', item.category, type)"
           >
-            <span class="text-xl">{{ categoryIcon(item.category) }}</span>
+            <span class="text-xl">{{ item.icon || categoryIcon(item.category) }}</span>
             <div class="flex-1">
               <div class="text-sm font-medium text-gray-800">{{ item.category }}</div>
               <div class="mt-1 bg-gray-100 rounded-full h-1.5 overflow-hidden">
@@ -80,8 +80,11 @@
 import { ref, computed, watch, onMounted, nextTick } from 'vue'
 import { Chart, ArcElement, DoughnutController, Tooltip, Legend } from 'chart.js'
 import { getRoleTotalsByType } from '../utils/detailSummary.js'
+import { useCategories } from '../utils/categories.js'
 
 Chart.register(ArcElement, DoughnutController, Tooltip, Legend)
+
+const { categoryIcon } = useCategories()
 
 const props = defineProps({
   type: String,
@@ -110,17 +113,6 @@ const total = computed(() => {
   const d = props.type === '支出' ? data.value.expense : data.value.income
   return d['男朋友'] + d['女朋友'] + d['共同']
 })
-
-const categoryIcons = {
-  '餐饮': '🍜', '交通': '🚗', '购物': '🛍️', '娱乐': '🎮',
-  '居住': '🏠', '医疗': '💊', '教育': '📚', '通讯': '📱',
-  '日用': '🧴', '工资': '💰', '奖金': '🎉', '红包': '🧧',
-  '转账': '💳', '其他': '📌'
-}
-
-function categoryIcon(c) {
-  return categoryIcons[c] || '📌'
-}
 
 function percent(amount) {
   if (total.value === 0) return 0

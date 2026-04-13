@@ -55,8 +55,11 @@
 import { ref, onMounted, onBeforeUnmount, nextTick, watch } from 'vue'
 import { Chart } from 'chart.js'
 import { registerChartPageCharts } from '../utils/chartPageCharts.js'
+import { useCategories } from '../utils/categories.js'
 
 registerChartPageCharts()
+
+const { categoryIcon } = useCategories()
 
 const props = defineProps({
   category: String,
@@ -66,14 +69,7 @@ const props = defineProps({
 
 defineEmits(['back'])
 
-const categoryIcons = {
-  '餐饮': '🍜', '交通': '🚗', '购物': '🛍️', '娱乐': '🎮',
-  '居住': '🏠', '医疗': '💊', '教育': '📚', '通讯': '📱',
-  '日用': '🧴', '工资': '💰', '奖金': '🎉', '红包': '🧧',
-  '转账': '💳', '其他': '📌'
-}
-
-const icon = categoryIcons[props.category] || '📌'
+const icon = categoryIcon(props.category)
 const dailyData = ref([])
 
 const pieRef = ref(null)

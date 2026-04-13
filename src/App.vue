@@ -62,11 +62,14 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { formatLocalMonth } from './utils/date.js'
+import { useCategories } from './utils/categories.js'
 import Dashboard from './components/Dashboard.vue'
 import AiInput from './components/AiInput.vue'
 import HistoryList from './components/HistoryList.vue'
 import DetailPage from './components/DetailPage.vue'
 import ChartPage from './components/ChartPage.vue'
+
+const { fetchCategories } = useCategories()
 
 const currentMonth = ref(formatLocalMonth(new Date()))
 const identity = ref(localStorage.getItem('identity') || '男朋友')
@@ -105,6 +108,7 @@ function onMonthChange(month) {
 function onRecordSaved() {
   dashboardRef.value?.refresh()
   historyRef.value?.refresh()
+  fetchCategories()
 }
 </script>
 

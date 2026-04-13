@@ -28,7 +28,7 @@
           class="flex items-center gap-3 py-2.5 px-3 bg-gray-50 rounded-xl mb-1.5 active:scale-[0.98] transition-transform cursor-pointer"
           @click="openEdit(r)"
         >
-          <div class="text-xl">{{ categoryIcon(r.category) }}</div>
+          <div class="text-xl">{{ r.icon || categoryIcon(r.category) }}</div>
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2">
               <span class="text-sm text-gray-800 font-medium">{{ r.note || r.category }}</span>
@@ -74,6 +74,9 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import { showToast } from 'vant'
+import { useCategories } from '../utils/categories.js'
+
+const { categoryIcon } = useCategories()
 
 const props = defineProps({
   month: String
@@ -135,17 +138,6 @@ const groupedRecords = computed(() => {
   }
   return Object.values(map).sort((a, b) => b.date.localeCompare(a.date))
 })
-
-const categoryIcons = {
-  '餐饮': '🍜', '交通': '🚗', '购物': '🛍️', '娱乐': '🎮',
-  '居住': '🏠', '医疗': '💊', '教育': '📚', '通讯': '📱',
-  '日用': '🧴', '工资': '💰', '奖金': '🎉', '红包': '🧧',
-  '转账': '💳', '其他': '📌'
-}
-
-function categoryIcon(c) {
-  return categoryIcons[c] || '📌'
-}
 
 function roleTagClass(role) {
   const map = {
