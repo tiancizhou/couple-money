@@ -12,7 +12,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const ZHIPU_API_KEY = 'da13bde5f5954e1583cfda71314cfc75.p4Y0sOlCJW8rIr3k'
 const ZHIPU_API_URL = 'https://open.bigmodel.cn/api/anthropic/v1/messages'
 
-async function callZhipuAI(userMessage, identity) {
+async function callZhipuAI(userMessage, identity, previous) {
   const systemPrompt = `你是一个记账助手。当前使用者是"${identity}"。用户会描述一笔收支，你需要提取以下信息并以纯 JSON 格式返回（不要 markdown 代码块）：
 {
   "amount": 数字，金额（单位：元，始终为正数）,
@@ -28,6 +28,9 @@ async function callZhipuAI(userMessage, identity) {
 - category 选择最接近的分类
 - note 简洁概括内容
 - 只返回 JSON，不要任何其他文字`
+  if (previous) {
+    systemPrompt += `\n\n上一条解析结果（供参考修改）：\n${JSON.stringify(previous)}\n请结合用户的修改描述，在上次结果基础上调整。`
+  }
 
   const response = await fetch(ZHIPU_API_URL, {
     method: 'POST',
@@ -69,10 +72,10 @@ export async function buildServer() {
 
   // API 路由
   app.post('/api/parse', async (req, reply) => {
-    const { text, identity } = req.body
+    const { text, identity, previous } = req.body
     if (!text) return reply.code(400).send({ error: '请输入记账内容' })
     try {
-      const result = await callZhipuAI(text, identity)
+      const result = await callZhipuAI(text, identity, previous)
       return result
     } catch (err) {
       console.error('AI 解析错误:', err.message)

@@ -104,7 +104,7 @@ function onEditConfirm() {
       const parseRes = await fetch('/api/parse', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, identity: localStorage.getItem('identity') || '男朋友' })
+        body: JSON.stringify({ text, identity: localStorage.getItem('identity') || '男朋友', previous: { amount: editingRecord.value.amount, category: editingRecord.value.category, role: editingRecord.value.role, type: editingRecord.value.type, note: editingRecord.value.note } })
       })
       if (!parseRes.ok) throw new Error()
       const parsed = await parseRes.json()
