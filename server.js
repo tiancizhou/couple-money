@@ -37,7 +37,7 @@ async function callZhipuAI(userMessage, identity) {
       'anthropic-version': '2023-06-01'
     },
     body: JSON.stringify({
-      model: 'glm-5.1',
+      model: 'GLM-4.7-FlashX',
       max_tokens: 200,
       system: systemPrompt,
       messages: [

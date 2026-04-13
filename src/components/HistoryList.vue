@@ -51,7 +51,7 @@
       v-model:show="showEdit"
       title="重新描述"
       show-cancel-button
-      :before-close="onEditBeforeClose"
+      @confirm="onEditConfirm"
       confirm-button-text="重新解析"
     >
       <div class="px-4 py-2">
@@ -91,36 +91,37 @@ function openEdit(record) {
   showEdit.value = true
 }
 
-async function onEditBeforeClose(action) {
-  if (action !== 'confirm') return true
+function onEditConfirm() {
   const text = editText.value.trim()
   if (!text) {
     showToast('请输入描述')
-    return false
+    return
   }
-  try {
-    const parseRes = await fetch('/api/parse', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text, identity: localStorage.getItem('identity') || '男朋友' })
-    })
-    if (!parseRes.ok) throw new Error()
-    const parsed = await parseRes.json()
+  const recordId = editingRecord.value.id
+  showToast('正在重新解析...')
+  ;(async () => {
+    try {
+      const parseRes = await fetch('/api/parse', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text, identity: localStorage.getItem('identity') || '男朋友' })
+      })
+      if (!parseRes.ok) throw new Error()
+      const parsed = await parseRes.json()
 
-    const updateRes = await fetch(`/api/records/${editingRecord.value.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(parsed)
-    })
-    if (!updateRes.ok) throw new Error()
+      const updateRes = await fetch(`/api/records/${recordId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(parsed)
+      })
+      if (!updateRes.ok) throw new Error()
 
-    showToast('更新成功')
-    fetchData()
-    return true
-  } catch {
-    showToast('更新失败，请重试')
-    return false
-  }
+      showToast('更新成功')
+      fetchData()
+    } catch {
+      showToast('更新失败，请重试')
+    }
+  })()
 }
 
 // 按日期分组
