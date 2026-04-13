@@ -3,7 +3,7 @@ import fastifyStatic from '@fastify/static'
 import fastifyCors from '@fastify/cors'
 import { fileURLToPath } from 'url'
 import path from 'path'
-import { addRecord, getRecordsByMonth, getDashboard, getMonths, getCategoryDaily, getCategoryRoleBreakdown, getDailyTrend } from './database.js'
+import { addRecord, getRecordsByMonth, getDashboard, getMonths, getCategoryDaily, getCategoryRoleBreakdown, getDailyTrend, updateRecord } from './database.js'
 import { formatLocalMonth } from './src/utils/date.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -85,6 +85,15 @@ export async function buildServer() {
     if (!amount || !date) return reply.code(400).send({ error: '缺少必要字段' })
     const result = addRecord({ amount, category, role, type, note, date })
     return { id: result.lastInsertRowid }
+  })
+
+  app.put('/api/records/:id', async (req, reply) => {
+    const id = Number(req.params.id)
+    const { amount, category, role, type, note } = req.body
+    if (!id || !amount) return reply.code(400).send({ error: '缺少必要字段' })
+    const result = updateRecord(id, { amount, category, role, type, note })
+    if (result.changes === 0) return reply.code(404).send({ error: '记录不存在' })
+    return { updated: result.changes }
   })
 
   app.get('/api/records', async (req) => {

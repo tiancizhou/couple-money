@@ -25,7 +25,8 @@
         <div
           v-for="r in group.items"
           :key="r.id"
-          class="flex items-center gap-3 py-2.5 px-3 bg-gray-50 rounded-xl mb-1.5"
+          class="flex items-center gap-3 py-2.5 px-3 bg-gray-50 rounded-xl mb-1.5 active:scale-[0.98] transition-transform cursor-pointer"
+          @click="openEdit(r)"
         >
           <div class="text-xl">{{ categoryIcon(r.category) }}</div>
           <div class="flex-1 min-w-0">
@@ -44,17 +45,83 @@
         </div>
       </div>
     </div>
+
+    <!-- 编辑弹窗 -->
+    <van-dialog
+      v-model:show="showEdit"
+      title="重新描述"
+      show-cancel-button
+      :before-close="onEditBeforeClose"
+      confirm-button-text="重新解析"
+    >
+      <div class="px-4 py-2">
+        <div class="text-xs text-gray-400 mb-2">
+          当前：{{ editingRecord?.category }} · ¥{{ editingRecord?.amount?.toFixed(0) }} · {{ editingRecord?.note }}
+        </div>
+        <van-field
+          v-model="editText"
+          placeholder="重新描述这笔账目"
+          type="textarea"
+          rows="2"
+          autosize
+          class="!bg-gray-50 !rounded-xl !border-0"
+        />
+      </div>
+    </van-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
+import { showToast } from 'vant'
 
 const props = defineProps({
   month: String
 })
 
 const records = ref([])
+
+const showEdit = ref(false)
+const editingRecord = ref(null)
+const editText = ref('')
+
+function openEdit(record) {
+  editingRecord.value = record
+  editText.value = ''
+  showEdit.value = true
+}
+
+async function onEditBeforeClose(action) {
+  if (action !== 'confirm') return true
+  const text = editText.value.trim()
+  if (!text) {
+    showToast('请输入描述')
+    return false
+  }
+  try {
+    const parseRes = await fetch('/api/parse', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, identity: localStorage.getItem('identity') || '男朋友' })
+    })
+    if (!parseRes.ok) throw new Error()
+    const parsed = await parseRes.json()
+
+    const updateRes = await fetch(`/api/records/${editingRecord.value.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(parsed)
+    })
+    if (!updateRes.ok) throw new Error()
+
+    showToast('更新成功')
+    fetchData()
+    return true
+  } catch {
+    showToast('更新失败，请重试')
+    return false
+  }
+}
 
 // 按日期分组
 const groupedRecords = computed(() => {

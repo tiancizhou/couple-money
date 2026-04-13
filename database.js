@@ -39,6 +39,13 @@ export function addRecord({ amount, category, role, type, note, date }) {
   return stmt.run(amount, category, role, type || '支出', note, date)
 }
 
+export function updateRecord(id, { amount, category, role, type, note }) {
+  const stmt = db.prepare(
+    'UPDATE records SET amount = ?, category = ?, role = ?, type = ?, note = ? WHERE id = ?'
+  )
+  return stmt.run(amount, category, role, type, note, id)
+}
+
 // 按月份查询记录
 export function getRecordsByMonth(yearMonth) {
   const stmt = db.prepare(
