@@ -160,7 +160,15 @@ export function getCategories() {
 
 export function ensureCategory(name, icon) {
   if (!name) return
-  db.prepare('INSERT OR IGNORE INTO categories (name, icon) VALUES (?, ?)').run(name, icon || '📌')
+  const effectiveIcon = icon && icon !== '📌' ? icon : null
+  const existing = db.prepare('SELECT icon FROM categories WHERE name = ?').get(name)
+  if (existing) {
+    if (effectiveIcon && existing.icon === '📌') {
+      db.prepare('UPDATE categories SET icon = ? WHERE name = ?').run(effectiveIcon, name)
+    }
+  } else {
+    db.prepare('INSERT INTO categories (name, icon) VALUES (?, ?)').run(name, effectiveIcon || '📌')
+  }
 }
 
 export default db

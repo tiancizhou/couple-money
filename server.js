@@ -90,7 +90,8 @@ export async function buildServer() {
     const { amount, category, role, type, note, date, icon } = req.body
     if (!amount || !date) return reply.code(400).send({ error: '缺少必要字段' })
     ensureCategory(category, icon)
-    const result = addRecord({ amount, category, role, type, note, date, icon })
+    const finalIcon = icon || (getCategories().find(c => c.name === category))?.icon || '📌'
+    const result = addRecord({ amount, category, role, type, note, date, icon: finalIcon })
     return { id: result.lastInsertRowid }
   })
 
@@ -99,7 +100,8 @@ export async function buildServer() {
     const { amount, category, role, type, note, icon } = req.body
     if (!id || !amount) return reply.code(400).send({ error: '缺少必要字段' })
     ensureCategory(category, icon)
-    const result = updateRecord(id, { amount, category, role, type, note, icon })
+    const finalIcon = icon || (getCategories().find(c => c.name === category))?.icon || '📌'
+    const result = updateRecord(id, { amount, category, role, type, note, icon: finalIcon })
     if (result.changes === 0) return reply.code(404).send({ error: '记录不存在' })
     return { updated: result.changes }
   })

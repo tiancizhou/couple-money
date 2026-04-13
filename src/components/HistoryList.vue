@@ -76,7 +76,7 @@ import { ref, computed, watch, onMounted } from 'vue'
 import { showToast } from 'vant'
 import { useCategories } from '../utils/categories.js'
 
-const { categoryIcon } = useCategories()
+const { categoryIcon, fetchCategories } = useCategories()
 
 const props = defineProps({
   month: String
@@ -120,6 +120,7 @@ function onEditConfirm() {
       if (!updateRes.ok) throw new Error()
 
       showToast('更新成功')
+      fetchCategories()
       fetchData()
     } catch {
       showToast('更新失败，请重试')
