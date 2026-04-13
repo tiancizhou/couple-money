@@ -13,7 +13,7 @@ const ZHIPU_API_KEY = 'da13bde5f5954e1583cfda71314cfc75.p4Y0sOlCJW8rIr3k'
 const ZHIPU_API_URL = 'https://open.bigmodel.cn/api/anthropic/v1/messages'
 
 async function callZhipuAI(userMessage, identity, previous) {
-  const systemPrompt = `你是一个记账助手。当前使用者是"${identity}"。用户会描述一笔收支，你需要提取以下信息并以纯 JSON 格式返回（不要 markdown 代码块）：
+  let systemPrompt = `你是一个记账助手。当前使用者是"${identity}"。用户会描述一笔收支，你需要提取以下信息并以纯 JSON 格式返回（不要 markdown 代码块）：
 {
   "amount": 数字，金额（单位：元，始终为正数）,
   "category": 字符串，分类（餐饮/交通/购物/娱乐/居住/医疗/教育/通讯/日用/工资/奖金/红包/转账/其他）,
